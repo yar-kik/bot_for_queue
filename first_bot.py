@@ -3,7 +3,7 @@ from telebot import types
 from text_file import bad_joke
 from whats_new import news
 import random as r
-from database import BotQueue
+from database2 import BotQueue
 from keyboard import *
 
 bot = telebot.TeleBot("926024610:AAHK2vj_OKHq5l4eKZnoWz9b3jWYqQVA-5Q")
@@ -43,8 +43,9 @@ def send_welcome(message):
         else:
             bot.send_message(message.chat.id, "Вы хотите посмотреть или стать в очередь?", reply_markup=keyboard2)
             bot.register_next_step_handler(message, queue_func)
-    # if text == "id":
-    #     bot.send_message(message.chat.id, message.from_user.id)
+    if text == "назад":
+        bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
+        bot.register_next_step_handler(message, send_welcome)
 
 
 def queue_func(message):
@@ -55,9 +56,9 @@ def queue_func(message):
             bot.send_message(message.chat.id, f"Человек был удален", reply_markup=keyboard_admin)
             bot.register_next_step_handler(message, queue_func)
             if queue.len_queue() > 0:
-                bot.send_message(queue.show_first()[0]["telegram_id"], 'Сейчас твоя очередь!')
+                bot.send_message(queue.show_first()[0][3], 'Сейчас твоя очередь!')
                 if queue.len_queue() > 1:
-                    bot.send_message(queue.show_first()[1]["telegram_id"], "Приготовься, скоро твоя очередь)")
+                    bot.send_message(queue.show_first()[1][3], "Приготовься, скоро твоя очередь)")
         else:
             bot.send_message(message.chat.id, "Некого удалять", reply_markup=keyboard_admin)
             bot.register_next_step_handler(message, queue_func)
@@ -72,7 +73,7 @@ def queue_func(message):
             bot.register_next_step_handler(message, queue_func)
 
     if text == "стать в очередь":
-        if message.from_user.id not in [queue.show_all()[i]['telegram_id'] for i in range(queue.len_queue())]:
+        if message.from_user.id not in [queue.show_all()[i][3] for i in range(queue.len_queue())]:
             bot.send_message(message.chat.id, 'Ваше имя и фамилия')
             bot.register_next_step_handler(message, get_name)  # like input("message") = what we want to send
         # queue_start = куди послати
@@ -87,12 +88,12 @@ def queue_func(message):
         else:
             if queue.len_queue() > 4:
                 list_queue = queue.show_first() + \
-                         [{"user_id": ". . .", "fname": ". . .", "lname": ". . ."}] + \
+                         [(". . .", ". . .", ". . .", ". . .")] + \
                          queue.show_last()
             else:
                 list_queue = queue.show_all()
-            for person in list_queue:
-                bot.send_message(message.chat.id, f"{person['user_id']} {person['fname']} {person['lname']}")
+            for user_id, fname, lname, telegram_id in list_queue:
+                bot.send_message(message.chat.id, f"{user_id} {fname} {lname}")
             bot.register_next_step_handler(message, queue_func)
 
     if text == "назад":
@@ -134,7 +135,7 @@ def yesno(message, *arg):
         bot.register_next_step_handler(message, send_welcome)
 
 def admin(message):
-    return message.from_user.id in [queue.show_admin()[i]['telegram_id'] for i in range(len(queue.show_admin()))]
+    return message.from_user.id in [queue.show_admin()[i][1] for i in range(len(queue.show_admin()))]
 
 def get_password(message):
     if message.text == "1604YAR":
