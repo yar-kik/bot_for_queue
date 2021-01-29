@@ -50,20 +50,20 @@ def queue_func(message):
     text = message.text.lower()
     if text == "удалить первого" and admin(message):
         if queue.len_queue():
-            queue.delete_first()
+            queue.delete_first_user()
             bot.send_message(message.chat.id, f"Человек был удален", reply_markup=keyboard_admin)
             bot.register_next_step_handler(message, queue_func)
             if queue.len_queue() > 0:
-                bot.send_message(queue.show_first()[0][3], 'Сейчас твоя очередь!')
+                bot.send_message(queue.show_first_user()[0][3], 'Сейчас твоя очередь!')
                 if queue.len_queue() > 1:
-                    bot.send_message(queue.show_first()[1][3], "Приготовься, скоро твоя очередь)")
+                    bot.send_message(queue.show_first_user()[1][3], "Приготовься, скоро твоя очередь)")
         else:
             bot.send_message(message.chat.id, "Некого удалять", reply_markup=keyboard_admin)
             bot.register_next_step_handler(message, queue_func)
 
     if text == "очистить очередь" and admin(message):
         if queue.len_queue():
-            queue.reset()
+            queue.clear_queue()
             bot.send_message(message.chat.id, "Очередь очищена!", reply_markup=keyboard_admin)
             bot.register_next_step_handler(message, queue_func)
         else:
@@ -85,9 +85,9 @@ def queue_func(message):
             # bot.register_next_step_handler(message, queue_func)
         else:
             if queue.len_queue() > 4:
-                list_queue = queue.show_first() + \
-                         [(". . .", ". . .", ". . .", ". . .")] + \
-                         queue.show_last()
+                list_queue = queue.show_first_user() + \
+                             [(". . .", ". . .", ". . .", ". . .")] + \
+                             queue.show_last()
             else:
                 list_queue = queue.show_all()
             for user_id, fname, lname, telegram_id in list_queue:
@@ -117,7 +117,7 @@ def yesno(message, *arg):
     text = message.text.lower()
     fname, lname = arg
     if text == 'да':
-        queue.insert(lname, fname, message.from_user.id)
+        queue.add_user(lname, fname, message.from_user.id)
         bot.send_message(message.chat.id, 'Запомню)', reply_markup=keyboard)
         bot.register_next_step_handler(message, send_welcome)
     elif text == "нет":
@@ -134,12 +134,12 @@ def yesno(message, *arg):
 
 
 def admin(message):
-    return message.from_user.id in [queue.show_admin()[i][1] for i in range(len(queue.show_admin()))]
+    return message.from_user.id in [queue.show_admins()[i][1] for i in range(len(queue.show_admins()))]
 
 
 def get_password(message):
     if message.text == "1604YAR":
-        queue.admin_granted(message.from_user.id)
+        queue.create_admin(message.from_user.id)
         bot.send_message(message.chat.id, "Права администратора предоставлены", reply_markup=keyboard_admin)
         bot.register_next_step_handler(message, queue_func)
     else:

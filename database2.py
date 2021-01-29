@@ -1,75 +1,104 @@
-import sqlite3 as pq
+import sqlite3
+from typing import *
 
 
 class Queue:
-    def __init__(self):
-        self.conn = pq.connect(':memory:', check_same_thread=False)
-        self.conn.execute("create table if not exists bqueue "
-                          "(user_id integer primary key, fname text, lname text, "
-                          "telegram_id integer)")
-        self.conn.execute("create table if not exists administrators "
-                          "(user_id integer primary key, telegram_id integer)")
+    """
+    Class to interact with sqlite database
+    """
 
-    def admin_granted(self, telegram_id):
-        connection = self.conn
-        query = "insert into administrators(telegram_id) values(?)"
-        connection.cursor().execute(query, (telegram_id,))
-        connection.commit()
+    def __init__(self, queue_db: str = 'bot_queue',
+                 admins_db: str = 'admins') -> None:
+        """
+        Create databases for a queue and admins of the queue
+        :queue_db: The name of a created queue database.
+        :admins_db: The name of a created admins database.
+        """
+        self._queue_db = queue_db
+        self._admins_db = admins_db
+        self._connection = sqlite3.connect(':memory:',
+                                           check_same_thread=False)
+        self.cursor = self._connection.cursor()
+        self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {queue_db} "
+                            "(user_id INTEGER PRIMARY KEY, "
+                            "first_name TEXT, "
+                            "last_name TEXT, "
+                            "telegram_id INTEGER);")
+        self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {admins_db} "
+                            "(user_id INTEGER PRIMARY KEY, "
+                            "telegram_id INTEGER);")
+        self._connection.commit()
 
-    def show_admin(self):
-        cursor = self.conn.cursor()
-        query = "select * from administrators"
-        cursor.execute(query)
-        result = cursor.fetchall()
-        return result
+    def create_admin(self, telegram_id: Union[int, str]) -> None:
+        """
+        Add new admin to database
+        """
+        self.cursor.execute(f"INSERT INTO {self._admins_db} "
+                            f"(telegram_id) VALUES(?);", (telegram_id,))
+        self._connection.commit()
 
-    def insert(self, fname, lname, telegram_id):
-        connection = self.conn
-        query = "insert into bqueue(fname, lname, telegram_id) values(?, ?, ?)"
-        connection.cursor().execute(query, (fname, lname, telegram_id))
-        connection.commit()
+    def show_admins(self) -> List[Tuple]:
+        """
+        Show all admins
+        """
+        self.cursor.execute(f"SELECT * FROM {self._admins_db};")
+        admins = self.cursor.fetchall()
+        return admins
 
-    def delete_first(self):
-        connection = self.conn
-        #query = "delete from bqueue order by user_id asc limit 1"
-        query = "DELETE FROM bqueue WHERE user_id BETWEEN (SELECT MIN(user_id) FROM bqueue) " \
-                "AND (SELECT MIN(user_id) FROM bqueue)"
-        connection.cursor().execute(query)
-        connection.commit()
+    def add_user(self, first_name: str, last_name: str,
+                 telegram_id: Union[str, int]) -> None:
+        """
+        Add a new user to database
+        """
+        self.cursor.execute(f"INSERT INTO {self._queue_db} "
+                            f"(first_name, last_name, telegram_id) "
+                            f"VALUES (?, ?, ?);",
+                            (first_name, last_name, telegram_id))
+        self._connection.commit()
 
-    def reset(self):
-        connection = self.conn
-        query = "delete from bqueue"
-        connection.cursor().execute(query)
-        connection.commit()
+    def delete_first_user(self) -> None:
+        """
+        Delete first row of queue database table
+        """
+        self.cursor.execute(f"DELETE FROM {self._queue_db} WHERE user_id IN "
+                            f"(SELECT user_id FROM {self._queue_db} "
+                            f"ORDER BY user_id ASC LIMIT 1)")
+        self._connection.commit()
 
-    def show_first(self):
-        cursor = self.conn.cursor()
-        #query = "select * from bqueue order by user_id asc limit 2"
-        query = "select * from bqueue where user_id between (select min(user_id) from bqueue) " \
-                "and (select min(user_id) from bqueue)+1"
-        cursor.execute(query)
-        result = cursor.fetchall()
-        return result
+    def clear_queue(self) -> None:
+        """
+        Delete all users from queue
+        """
+        self.cursor.execute(f"DELETE FROM {self._queue_db}")
+        self._connection.commit()
 
-    def show_last(self):
-        cursor = self.conn.cursor()
-        # query = "select * from bqueue order by user_id desc limit 2"
-        query = "select * from bqueue where user_id between (select max(user_id) from bqueue)-1 " \
-                "and (select max(user_id) from bqueue)"
-        cursor.execute(query)
-        result = cursor.fetchall()
-        return result
+    def show_first_user(self) -> Tuple[int, str]:
+        """
+        Return first user of the queue
+        """
+        self.cursor.execute(f"SELECT * FROM {self._queue_db} "
+                            f"ORDER BY user_id ASC LIMIT 1")
+        first_user = self.cursor.fetchone()
+        return first_user
+
+    def show_last(self) -> Tuple[int, str]:
+        """
+        Return last user of the queue
+        """
+        self.cursor.execute(f"SELECT * FROM {self._queue_db} "
+                            f"ORDER BY user_id ASC LIMIT 1")
+        last_user = self.cursor.fetchone()
+        return last_user
 
     def show_all(self):
-        cursor = self.conn.cursor()
+        cursor = self.connection.cursor()
         query = "select * from bqueue"
         cursor.execute(query)
         result = cursor.fetchall()
         return result
 
     def len_queue(self):
-        cursor = self.conn.cursor()
+        cursor = self.connection.cursor()
         query = "select count(*) from bqueue"
         cursor.execute(query)
         result = cursor.fetchone()

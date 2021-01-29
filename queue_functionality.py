@@ -13,14 +13,14 @@ def delete_first(message: Message) -> None:
     """
     user = message.from_user.first_name
     if queue.len_queue():
-        queue.delete_first()
+        queue.delete_first_user()
         bot.send_message(message.chat.id, f"{user} был удален",
                          reply_markup=keyboard_admin)
         # bot.register_next_step_handler(message, queue_func)
         if queue.len_queue() > 0:
-            bot.send_message(queue.show_first()[0][3], 'Сейчас твоя очередь!')
+            bot.send_message(queue.show_first_user()[0][3], 'Сейчас твоя очередь!')
             if queue.len_queue() > 1:
-                bot.send_message(queue.show_first()[1][3], "Приготовься, скоро твоя очередь)")
+                bot.send_message(queue.show_first_user()[1][3], "Приготовься, скоро твоя очередь)")
     else:
         bot.send_message(message.chat.id, "Некого удалять", reply_markup=keyboard_admin)
         # bot.register_next_step_handler(message, queue_func)
@@ -31,7 +31,7 @@ def clean_queue(message: Message) -> None:
     Remove all people from the queue
     """
     if queue.len_queue():
-        queue.reset()
+        queue.clear_queue()
         bot.send_message(message.chat.id, "Очередь очищена!", reply_markup=keyboard_admin)
         # bot.register_next_step_handler(message, queue_func)
     else:
@@ -60,7 +60,7 @@ def view_queue(message: Message) -> None:
         # bot.register_next_step_handler(message, queue_func)
     else:
         if queue.len_queue() > 4:
-            list_queue = queue.show_first() + \
+            list_queue = queue.show_first_user() + \
                          [(". . .", ". . .", ". . .", ". . .")] + \
                          queue.show_last()
         else:
