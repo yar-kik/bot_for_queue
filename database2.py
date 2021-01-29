@@ -1,7 +1,7 @@
 import sqlite3 as pq
 
 
-class BotQueue:
+class Queue:
     def __init__(self):
         self.conn = pq.connect(':memory:', check_same_thread=False)
         self.conn.execute("create table if not exists bqueue "

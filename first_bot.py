@@ -1,19 +1,17 @@
 import telebot
 from telebot import types
+import os
 from text_file import bad_joke
-from whats_new import news
-
+import json
 import random as r
-from database2 import BotQueue
+from database2 import Queue
 from keyboard import *
 
-bot = telebot.TeleBot("926024610:AAHK2vj_OKHq5l4eKZnoWz9b3jWYqQVA-5Q")
-queue = BotQueue()
+bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
+queue = Queue()
 
 
-# print(help(bot))
-
-@bot.message_handler(commands=['start', 'admin'])  # бот реагує на "старт"
+@bot.message_handler(commands=['start', 'admin'])
 def start_message(message):
     if message.text == '/start':
         if admin(message):
@@ -84,7 +82,7 @@ def queue_func(message):
     if text == "посмотреть":
         if not queue.len_queue():
             bot.send_message(message.chat.id, "В очереди никого нет")
-            bot.register_next_step_handler(message, queue_func)
+            # bot.register_next_step_handler(message, queue_func)
         else:
             if queue.len_queue() > 4:
                 list_queue = queue.show_first() + \
@@ -134,8 +132,10 @@ def yesno(message, *arg):
         bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
         bot.register_next_step_handler(message, send_welcome)
 
+
 def admin(message):
     return message.from_user.id in [queue.show_admin()[i][1] for i in range(len(queue.show_admin()))]
+
 
 def get_password(message):
     if message.text == "1604YAR":
