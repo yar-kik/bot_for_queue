@@ -1,14 +1,87 @@
 import telebot
 from telebot import types
 import os
-from text_file import bad_joke
-import json
-import random as r
-from database2 import Queue
-from keyboard import *
 
+from telebot.types import Message
+
+from text_file import bad_joke
+import random as r
+from database import Queue
+from keyboard import *
 bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
 queue = Queue()
+
+
+def delete_first(message: Message) -> None:
+    """
+    Delete a first person in the queue
+    """
+    user = message.from_user.first_name
+    if queue.len_of_queue():
+        queue.delete_first_user()
+        bot.send_message(message.chat.id, f"{user} был удален",
+                         reply_markup=keyboard_admin)
+        bot.send_message(queue.show_first_user()[3],
+                         'Сейчас твоя очередь!')
+        if queue.len_of_queue() > 1:
+            bot.send_message(queue.show_all_user()[1][3],
+                             "Приготовься, ты следуюющий)")
+    else:
+        bot.send_message(message.chat.id, "Некого удалять",
+                         reply_markup=keyboard_admin)
+    bot.register_next_step_handler(message, main)
+
+
+def clear_queue(message: Message) -> None:
+    """
+    Remove all people from the queue
+    """
+    if queue.len_of_queue():
+        queue.clear_queue()
+        bot.send_message(message.chat.id, "Очередь очищена!",
+                         reply_markup=keyboard_admin)
+    else:
+        bot.send_message(message.chat.id, "В очереди никого нет")
+    bot.register_next_step_handler(message, main)
+
+
+def get_in_line(message: Message) -> None:
+    """
+    Get to the end of the queue
+    """
+    if message.from_user.id not in \
+            [user[3] for user in queue.show_all_user()]:
+        bot.send_message(message.chat.id, 'Ваше имя и фамилия')
+        bot.register_next_step_handler(message, get_name)
+    else:
+        bot.send_message(message.chat.id, "Ты уже в очереди!",
+                         reply_markup=keyboard)
+        bot.register_next_step_handler(message, send_welcome)
+
+
+def view_queue(message: Message) -> None:
+    """
+    Function to see who is in line
+    """
+    if not queue.len_of_queue():
+        bot.send_message(message.chat.id, "В очереди никого нет")
+    else:
+        if queue.len_of_queue() > 4:
+            bot.send_message(message.chat.id, queue.show_first_user())
+            bot.send_message(message.chat.id, (". . .", ". . .", ". . .", ". . ."))
+            bot.send_message(message.chat.id, queue.show_last_user())
+        else:
+            for user_id, first_name, last_name, _ in queue.show_all_user():
+                bot.send_message(message.chat.id, f"{first_name} {last_name}")
+    bot.register_next_step_handler(message, main)
+
+
+def back_to_main(message: Message) -> None:
+    """
+    Return to main menu
+    """
+    bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
+    bot.register_next_step_handler(message, send_welcome)
 
 
 @bot.message_handler(commands=['start', 'admin'])
@@ -32,71 +105,87 @@ def send_welcome(message):
         bot.send_sticker(message.chat.id, 'CAACAgIAAxkBAAMdXmBBaatmD8bUmYh_wvvCMQS5rKwAAg8AA0LhehVsOkNFYep6sxgE')
     if text == "расскажи шутку":
         bot.send_message(message.chat.id, bad_joke())
-    if text == "что нового?":
-        bot.send_message(message.chat.id, "[Новости мира видеоигр]({})".format(news()), parse_mode="Markdown")
+    # if text == "что нового?":
+        # bot.send_message(message.chat.id, queue.show_all_user())
+        # bot.send_message(message.chat.id, "[Новости мира видеоигр]({})".format(news()), parse_mode="Markdown")
     if text == "очередь":
         if admin(message):
             bot.send_message(message.chat.id, f"Что хотите сделать, {message.from_user.first_name}?", reply_markup=keyboard_admin)
-            bot.register_next_step_handler(message, queue_func)
+            bot.register_next_step_handler(message, main)
         else:
             bot.send_message(message.chat.id, "Вы хотите посмотреть или стать в очередь?", reply_markup=keyboard2)
-            bot.register_next_step_handler(message, queue_func)
+            bot.register_next_step_handler(message, main)
     if text == "назад":
         bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
         bot.register_next_step_handler(message, send_welcome)
 
 
-def queue_func(message):
+# def queue_func(message):
+#     text = message.text.lower()
+#     if text == "удалить первого" and admin(message):
+#         if queue.len_queue():
+#             queue.delete_first_user()
+#             bot.send_message(message.chat.id, f"Человек был удален", reply_markup=keyboard_admin)
+#             bot.register_next_step_handler(message, queue_func)
+#             if queue.len_queue() > 0:
+#                 bot.send_message(queue.show_first_user()[0][3], 'Сейчас твоя очередь!')
+#                 if queue.len_queue() > 1:
+#                     bot.send_message(queue.show_first_user()[1][3], "Приготовься, скоро твоя очередь)")
+#         else:
+#             bot.send_message(message.chat.id, "Некого удалять", reply_markup=keyboard_admin)
+#             bot.register_next_step_handler(message, queue_func)
+#
+#     if text == "очистить очередь" and admin(message):
+#         if queue.len_queue():
+#             queue.clear_queue()
+#             bot.send_message(message.chat.id, "Очередь очищена!", reply_markup=keyboard_admin)
+#             bot.register_next_step_handler(message, queue_func)
+#         else:
+#             bot.send_message(message.chat.id, "В очереди никого нет")
+#             bot.register_next_step_handler(message, queue_func)
+#
+#     if text == "стать в очередь":
+#         if message.from_user.id not in [queue.show_all_user()[i][3] for i in range(queue.len_of_queue())]:
+#             bot.send_message(message.chat.id, 'Ваше имя и фамилия')
+#             bot.register_next_step_handler(message, get_name)  # like input("message") = what we want to send
+#         # queue_start = куди послати
+#         else:
+#             bot.send_message(message.chat.id, "Ты уже в очереди!", reply_markup=keyboard)
+#             bot.register_next_step_handler(message, send_welcome)
+#
+#     if text == "посмотреть":
+#         if not queue.len_of_queue():
+#             bot.send_message(message.chat.id, "В очереди никого нет")
+#             bot.register_next_step_handler(message, queue_func)
+#         else:
+#             if queue.len_of_queue() > 4:
+#                 list_queue = queue.show_first_user() + \
+#                              [(". . .", ". . .", ". . .", ". . .")] + \
+#                              queue.show_last_user()
+#             else:
+#                 list_queue = queue.show_all_user()
+#             for user_id, fname, lname, telegram_id in list_queue:
+#                 bot.send_message(message.chat.id, f"{user_id} {fname} {lname}")
+#             bot.register_next_step_handler(message, queue_func)
+#
+#     if text == "назад":
+#         bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
+#         bot.register_next_step_handler(message, send_welcome)
+def main(message: Message) -> None:
+    """
+    The main function of queue
+    """
     text = message.text.lower()
-    if text == "удалить первого" and admin(message):
-        if queue.len_queue():
-            queue.delete_first_user()
-            bot.send_message(message.chat.id, f"Человек был удален", reply_markup=keyboard_admin)
-            bot.register_next_step_handler(message, queue_func)
-            if queue.len_queue() > 0:
-                bot.send_message(queue.show_first_user()[0][3], 'Сейчас твоя очередь!')
-                if queue.len_queue() > 1:
-                    bot.send_message(queue.show_first_user()[1][3], "Приготовься, скоро твоя очередь)")
-        else:
-            bot.send_message(message.chat.id, "Некого удалять", reply_markup=keyboard_admin)
-            bot.register_next_step_handler(message, queue_func)
-
-    if text == "очистить очередь" and admin(message):
-        if queue.len_queue():
-            queue.clear_queue()
-            bot.send_message(message.chat.id, "Очередь очищена!", reply_markup=keyboard_admin)
-            bot.register_next_step_handler(message, queue_func)
-        else:
-            bot.send_message(message.chat.id, "В очереди никого нет")
-            bot.register_next_step_handler(message, queue_func)
-
+    if text == "удалить первого":
+        delete_first(message)
+    if text == "очистить очередь":
+        clear_queue(message)
     if text == "стать в очередь":
-        if message.from_user.id not in [queue.show_all()[i][3] for i in range(queue.len_queue())]:
-            bot.send_message(message.chat.id, 'Ваше имя и фамилия')
-            bot.register_next_step_handler(message, get_name)  # like input("message") = what we want to send
-        # queue_start = куди послати
-        else:
-            bot.send_message(message.chat.id, "Ты уже в очереди!", reply_markup=keyboard)
-            bot.register_next_step_handler(message, send_welcome)
-
+        get_in_line(message)
     if text == "посмотреть":
-        if not queue.len_queue():
-            bot.send_message(message.chat.id, "В очереди никого нет")
-            # bot.register_next_step_handler(message, queue_func)
-        else:
-            if queue.len_queue() > 4:
-                list_queue = queue.show_first_user() + \
-                             [(". . .", ". . .", ". . .", ". . .")] + \
-                             queue.show_last_user()
-            else:
-                list_queue = queue.show_all()
-            for user_id, fname, lname, telegram_id in list_queue:
-                bot.send_message(message.chat.id, f"{user_id} {fname} {lname}")
-            bot.register_next_step_handler(message, queue_func)
-
+        view_queue(message)
     if text == "назад":
-        bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
-        bot.register_next_step_handler(message, send_welcome)
+        back_to_main(message)
 
 
 def get_name(message):  # получаем фамилию
@@ -139,9 +228,9 @@ def admin(message):
 
 def get_password(message):
     if message.text == "1604YAR":
-        queue.create_admin(message.from_user.id)
+        queue.add_admin(message.from_user.id)
         bot.send_message(message.chat.id, "Права администратора предоставлены", reply_markup=keyboard_admin)
-        bot.register_next_step_handler(message, queue_func)
+        bot.register_next_step_handler(message, main)
     else:
         bot.send_message(message.chat.id, "Пароль введен неверно", reply_markup=keyboard)
         bot.register_next_step_handler(message, send_welcome)

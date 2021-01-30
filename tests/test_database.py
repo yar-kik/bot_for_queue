@@ -1,5 +1,5 @@
 import unittest
-from database2 import Queue
+from database import Queue
 
 
 class TestQueue(unittest.TestCase):
@@ -12,8 +12,8 @@ class TestQueue(unittest.TestCase):
         self.test_data = [(1, 'foo', 'bar', 123),
                           (2, 'bar', 'foo', 124)]
 
-    def test_create_admin(self):
-        self.queue.create_admin(1234)
+    def test_add_admin(self):
+        self.queue.add_admin(1234)
         self.queue.cursor.execute("SELECT * FROM admins;")
         admin = self.queue.cursor.fetchone()
         self.assertIn(1234, admin)

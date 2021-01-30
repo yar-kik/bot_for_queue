@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 
-keyboard = telebot.types.ReplyKeyboardMarkup(True, True)  # виклик клавіатури. щоб була меншою і щоб ховалася
+keyboard = telebot.types.ReplyKeyboardMarkup(True, True)
 keyboard.row("Что нового?", "Очередь")
 
 keyboard2 = telebot.types.ReplyKeyboardMarkup(True, True)
