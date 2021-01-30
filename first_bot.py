@@ -17,13 +17,13 @@ def delete_first(message: Message) -> None:
     Delete a first person in the queue
     """
     user = message.from_user.first_name
-    if queue.len_of_queue():
+    if queue.queue_length():
         queue.delete_first_user()
         bot.send_message(message.chat.id, f"{user} был удален",
                          reply_markup=keyboard_admin)
         bot.send_message(queue.show_first_user()[3],
                          'Сейчас твоя очередь!')
-        if queue.len_of_queue() > 1:
+        if queue.queue_length() > 1:
             bot.send_message(queue.show_all_user()[1][3],
                              "Приготовься, ты следуюющий)")
     else:
@@ -36,7 +36,7 @@ def clear_queue(message: Message) -> None:
     """
     Remove all people from the queue
     """
-    if queue.len_of_queue():
+    if queue.queue_length():
         queue.clear_queue()
         bot.send_message(message.chat.id, "Очередь очищена!",
                          reply_markup=keyboard_admin)
@@ -59,20 +59,40 @@ def get_in_line(message: Message) -> None:
         bot.register_next_step_handler(message, send_welcome)
 
 
+def show_many_users(queue: Queue) -> str:
+    """
+    Return string with first and last 2 users
+    """
+    users_list = ''
+    for user_id, first_name, last_name, _ in queue.show_first_user(2):
+        users_list += f"[{user_id}] {first_name} {last_name}\n"
+    users_list += '. . . . . . . .\n'
+    for user_id, first_name, last_name, _ in reversed(queue.show_last_user(2)):
+        users_list += f"[{user_id}] {first_name} {last_name}\n"
+    return users_list
+
+
+def show_few_users(queue: Queue) -> str:
+    """
+    Return string with all users
+    """
+    users_list = ''
+    for user_id, first_name, last_name, _ in queue.show_all_user():
+        users_list += f"[{user_id}] {first_name} {last_name}\n"
+    return users_list
+
+
 def view_queue(message: Message) -> None:
     """
     Function to see who is in line
     """
-    if not queue.len_of_queue():
+    if not queue.queue_length():
         bot.send_message(message.chat.id, "В очереди никого нет")
     else:
-        if queue.len_of_queue() > 4:
-            bot.send_message(message.chat.id, queue.show_first_user())
-            bot.send_message(message.chat.id, (". . .", ". . .", ". . .", ". . ."))
-            bot.send_message(message.chat.id, queue.show_last_user())
+        if queue.queue_length() > 4:
+            bot.send_message(message.chat.id, show_many_users(queue))
         else:
-            for user_id, first_name, last_name, _ in queue.show_all_user():
-                bot.send_message(message.chat.id, f"{first_name} {last_name}")
+            bot.send_message(message.chat.id, show_few_users(queue))
     bot.register_next_step_handler(message, main)
 
 
@@ -201,6 +221,8 @@ def get_name(message):  # получаем фамилию
         bot.send_message(message.chat.id, "Тебя зовут {} {}?".format(name[0], name[1]), reply_markup=keyboard1)
         bot.register_next_step_handler(message, yesno, name[0], name[1])
 
+# for i in range(3):
+#     queue.add_user(f'last_name{i}', f'first_name{i}', i)
 
 def yesno(message, *arg):
     text = message.text.lower()

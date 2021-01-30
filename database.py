@@ -86,23 +86,27 @@ class Queue:
         self.cursor.execute(f"DELETE FROM {self.queue_db}")
         self._connection.commit()
 
-    def show_first_user(self) -> Tuple[int, str]:
+    def show_first_user(self, n: int = 1) -> Union[Tuple, List[Tuple]]:
         """
         Return first user of the queue
+        :n: Amount of the first users.
         """
         self.cursor.execute(f"SELECT * FROM {self.queue_db} "
-                            f"ORDER BY user_id ASC LIMIT 1")
-        first_user = self.cursor.fetchone()
-        return first_user
+                            f"ORDER BY user_id ASC LIMIT {n}")
+        if n == 1:
+            return self.cursor.fetchone()
+        return self.cursor.fetchall()
 
-    def show_last_user(self) -> Tuple[int, str]:
+    def show_last_user(self, n: int = 1) -> Union[Tuple, List[Tuple]]:
         """
         Return last user of the queue
+        :n: Amount of the last users.
         """
         self.cursor.execute(f"SELECT * FROM {self.queue_db} "
-                            f"ORDER BY user_id DESC LIMIT 1")
-        last_user = self.cursor.fetchone()
-        return last_user
+                            f"ORDER BY user_id DESC LIMIT {n}")
+        if n == 1:
+            return self.cursor.fetchone()
+        return self.cursor.fetchall()
 
     def show_all_user(self) -> List[Tuple]:
         """
@@ -112,7 +116,7 @@ class Queue:
         users = self.cursor.fetchall()
         return users
 
-    def len_of_queue(self) -> int:
+    def queue_length(self) -> int:
         """
         Return the number of people in the queue
         """

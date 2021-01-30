@@ -69,5 +69,5 @@ class TestQueue(unittest.TestCase):
     def test_len_of_queue(self):
         self.queue.cursor.executemany('INSERT INTO queue VALUES (?, ?, ? ,?);',
                                       self.test_data)
-        queue_length = self.queue.len_of_queue()
+        queue_length = self.queue.queue_length()
         self.assertEqual(queue_length, len(self.test_data))
