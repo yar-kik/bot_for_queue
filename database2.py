@@ -14,8 +14,8 @@ class Queue:
         :queue_db: The name of a created queue database.
         :admins_db: The name of a created admins database.
         """
-        self._queue_db = queue_db
-        self._admins_db = admins_db
+        self.__queue_db = queue_db
+        self.__admins_db = admins_db
         self._connection = sqlite3.connect(':memory:',
                                            check_same_thread=False)
         self.cursor = self._connection.cursor()
@@ -29,11 +29,25 @@ class Queue:
                             "telegram_id INTEGER);")
         self._connection.commit()
 
+    @property
+    def queue_db(self) -> str:
+        """
+        Return name of the queue database
+        """
+        return self.__queue_db
+
+    @property
+    def admins_db(self) -> str:
+        """
+        Return name of the queue database
+        """
+        return self.__admins_db
+
     def create_admin(self, telegram_id: Union[int, str]) -> None:
         """
         Add new admin to database
         """
-        self.cursor.execute(f"INSERT INTO {self._admins_db} "
+        self.cursor.execute(f"INSERT INTO {self.admins_db} "
                             f"(telegram_id) VALUES(?);", (telegram_id,))
         self._connection.commit()
 
@@ -41,7 +55,7 @@ class Queue:
         """
         Show all admins
         """
-        self.cursor.execute(f"SELECT * FROM {self._admins_db};")
+        self.cursor.execute(f"SELECT * FROM {self.admins_db};")
         admins = self.cursor.fetchall()
         return admins
 
@@ -50,7 +64,7 @@ class Queue:
         """
         Add a new user to database
         """
-        self.cursor.execute(f"INSERT INTO {self._queue_db} "
+        self.cursor.execute(f"INSERT INTO {self.queue_db} "
                             f"(first_name, last_name, telegram_id) "
                             f"VALUES (?, ?, ?);",
                             (first_name, last_name, telegram_id))
@@ -60,8 +74,8 @@ class Queue:
         """
         Delete first row of queue database table
         """
-        self.cursor.execute(f"DELETE FROM {self._queue_db} WHERE user_id IN "
-                            f"(SELECT user_id FROM {self._queue_db} "
+        self.cursor.execute(f"DELETE FROM {self.queue_db} WHERE user_id IN "
+                            f"(SELECT user_id FROM {self.queue_db} "
                             f"ORDER BY user_id ASC LIMIT 1)")
         self._connection.commit()
 
@@ -69,37 +83,39 @@ class Queue:
         """
         Delete all users from queue
         """
-        self.cursor.execute(f"DELETE FROM {self._queue_db}")
+        self.cursor.execute(f"DELETE FROM {self.queue_db}")
         self._connection.commit()
 
     def show_first_user(self) -> Tuple[int, str]:
         """
         Return first user of the queue
         """
-        self.cursor.execute(f"SELECT * FROM {self._queue_db} "
+        self.cursor.execute(f"SELECT * FROM {self.queue_db} "
                             f"ORDER BY user_id ASC LIMIT 1")
         first_user = self.cursor.fetchone()
         return first_user
 
-    def show_last(self) -> Tuple[int, str]:
+    def show_last_user(self) -> Tuple[int, str]:
         """
         Return last user of the queue
         """
-        self.cursor.execute(f"SELECT * FROM {self._queue_db} "
-                            f"ORDER BY user_id ASC LIMIT 1")
+        self.cursor.execute(f"SELECT * FROM {self.queue_db} "
+                            f"ORDER BY user_id DESC LIMIT 1")
         last_user = self.cursor.fetchone()
         return last_user
 
-    def show_all(self):
-        cursor = self.connection.cursor()
-        query = "select * from bqueue"
-        cursor.execute(query)
-        result = cursor.fetchall()
-        return result
+    def show_all_user(self) -> List[Tuple]:
+        """
+        Return all user of the queue
+        """
+        self.cursor.execute(f"SELECT * FROM {self.queue_db}")
+        users = self.cursor.fetchall()
+        return users
 
-    def len_queue(self):
-        cursor = self.connection.cursor()
-        query = "select count(*) from bqueue"
-        cursor.execute(query)
-        result = cursor.fetchone()
+    def len_of_queue(self) -> int:
+        """
+        Return the number of people in the queue
+        """
+        self.cursor.execute(f"SELECT COUNT(*) FROM {self.queue_db}")
+        result = self.cursor.fetchone()
         return result[0]

@@ -62,7 +62,7 @@ def view_queue(message: Message) -> None:
         if queue.len_queue() > 4:
             list_queue = queue.show_first_user() + \
                          [(". . .", ". . .", ". . .", ". . .")] + \
-                         queue.show_last()
+                         queue.show_last_user()
         else:
             list_queue = queue.show_all()
         for user_id, fname, lname, telegram_id in list_queue:
