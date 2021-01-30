@@ -70,7 +70,7 @@ def get_in_line(queue: Queue, message: Message) -> None:
     else:
         bot.send_message(message.chat.id, "Ты уже в очереди!",
                          reply_markup=keyboard)
-        bot.register_next_step_handler(message, send_welcome)
+        bot.register_next_step_handler(message, main_menu)
 
 
 def view_queue(queue: Queue, message: Message) -> None:
@@ -115,7 +115,7 @@ def back_to_main(message: Message) -> None:
     Return to main menu
     """
     bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
-    bot.register_next_step_handler(message, send_welcome)
+    bot.register_next_step_handler(message, main_menu)
 
 
 @bot.message_handler(commands=['admin'])
@@ -137,7 +137,7 @@ def start_message(message):
 
 
 @bot.message_handler(content_types=['text'])
-def send_welcome(message):
+def main_menu(message):
     text = message.text.lower()
     # if text == "что нового?":
     # bot.send_message(message.chat.id, "[Новости мира видеоигр]({})".format(news()), parse_mode="Markdown")
@@ -165,7 +165,7 @@ def get_full_name(message: Message) -> None:
     name += message.text.split()
     if message.text.lower() == "назад":
         bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
-        bot.register_next_step_handler(message, send_welcome)
+        bot.register_next_step_handler(message, main_menu)
     elif len(name) == 1:
         bot.send_message(message.chat.id,
                          "Нужно ввести полностью ИМЯ и ФАМИЛИЮ")
@@ -188,7 +188,7 @@ def get_answer(message, *arg) -> None:
     if text == 'да':
         queue.add_user(*arg, message.from_user.id)
         bot.send_message(message.chat.id, 'Запомню)', reply_markup=keyboard)
-        bot.register_next_step_handler(message, send_welcome)
+        bot.register_next_step_handler(message, main_menu)
     if text == "нет":
         bot.send_message(message.chat.id, 'Введи еще раз имя и фамилию')
         bot.register_next_step_handler(message, get_full_name)
@@ -215,7 +215,7 @@ def get_password(message) -> None:
     else:
         bot.send_message(message.chat.id, "Пароль введен неверно",
                          reply_markup=keyboard)
-        bot.register_next_step_handler(message, send_welcome)
+        bot.register_next_step_handler(message, main_menu)
 
 
 bot.polling()
