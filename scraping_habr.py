@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -27,9 +27,7 @@ def create_table(db_name: str, table_name: str) -> None:
     cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} "
                    "(article_id INTEGER PRIMARY KEY, "
                    "url TEXT, "
-                   "title TEXT, "
-                   "text TEXT, "
-                   "tags TEXT);")
+                   "title TEXT);")
     connection.commit()
     connection.close()
 
@@ -42,8 +40,8 @@ def save_data(db_name: str, table_name: str, data: List[tuple]) -> None:
     cursor = connection.cursor()
     if not table_exists(db_name, table_name):
         create_table(db_name, table_name)
-    cursor.executemany(f"INSERT INTO {table_name} (url, title, text, tags)"
-                       f" VALUES(?, ?, ?, ?);", data)
+    cursor.executemany(f"INSERT INTO {table_name} (url, title)"
+                       f" VALUES(?, ?);", data)
     connection.commit()
     connection.close()
 
@@ -61,11 +59,8 @@ def get_articles(db_name: str, table_name: str, count: int = None) -> List[
         cursor.execute(f'SELECT * FROM {table_name} ')
     else:
         cursor.execute(f'SELECT * FROM {table_name} '
-                       f'ORDER BY article_id DESC LIMIT {count}')
+                       f'ORDER BY article_id ASC LIMIT {count}')
     return cursor.fetchall()
-
-
-url = "https://habr.com/ru/top/"
 
 
 def parse_article_from_site(url: str) -> list:
@@ -82,18 +77,13 @@ def parse_article_from_site(url: str) -> list:
         article_url = title_with_link['href']
         if article_url not in [article[1] for article in
                                get_articles('habr.db', 'habr_db')]:
-            raw_article_tags = article_data.find_all(
-                'a', class_='inline-list__item-link hub-link')
-            tags = ', '.join([tag.text for tag in raw_article_tags])
-            article_short_text = article_data.find('div',
-                                                   class_='post__text').text
-            article = (article_url, title, article_short_text, tags)
+            article = (article_url, title)
             new_articles.append(article)
     return new_articles
 
 
-def add_new_articles(url: str) -> None:
+def add_new_articles(db_name: str, table_name: str, url: str) -> None:
     """
     Add parsed article to database
     """
-    save_data('habr.db', 'habr_db', parse_article_from_site(url))
+    save_data(db_name, table_name, parse_article_from_site(url))

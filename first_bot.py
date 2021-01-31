@@ -1,13 +1,19 @@
 import os
+from typing import List
 
 from telebot.types import Message
 
 from database import Queue
 from keyboard import *
-from scraping_habr import get_articles
+from scraping_habr import get_articles, add_new_articles
 
 bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
 queue = Queue()
+NAME_DB = 'habr.db'
+ARTICLE_TABLE = 'habr_db'
+NEWS_TABLE = 'news'
+ARTICLE_URL = "https://habr.com/ru/all/"
+NEWS_URL = 'https://habr.com/ru/news/'
 
 
 def main(message: Message) -> None:
@@ -70,7 +76,7 @@ def get_in_line(queue: Queue, message: Message) -> None:
         bot.register_next_step_handler(message, get_full_name)
     else:
         bot.send_message(message.chat.id, "Ты уже в очереди!",
-                         reply_markup=keyboard)
+                         reply_markup=keyboard_main)
         bot.register_next_step_handler(message, main_menu)
 
 
@@ -115,7 +121,7 @@ def back_to_main(message: Message) -> None:
     """
     Return to main menu
     """
-    bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
+    bot.send_message(message.chat.id, '/start', reply_markup=keyboard_main)
     bot.register_next_step_handler(message, main_menu)
 
 
@@ -131,22 +137,48 @@ def get_admin_rights(message: Message) -> None:
 def start_message(message):
     if is_admin(message):
         bot.send_message(message.chat.id, "Здравствуйте, мой господин",
-                         reply_markup=keyboard)
+                         reply_markup=keyboard_main)
     else:
         bot.send_message(message.chat.id, "Приветствую /start",
-                         reply_markup=keyboard)
+                         reply_markup=keyboard_main)
+
+
+def get_articles_title(articles: List[tuple]) -> str:
+    """"""
+    titles = [f"{i}. [{article[2]}]({article[1]})" for i, article
+              in enumerate(articles, 1)]
+    titles = '\n\n'.join(titles)
+    return titles
+
+
+def get_habr(message: Message) -> None:
+    """"""
+    text = message.text.lower()
+    if text == "статьи":
+        add_new_articles(NAME_DB, ARTICLE_TABLE, ARTICLE_URL)
+        articles = get_articles(NAME_DB, ARTICLE_TABLE, 8)
+        titles = get_articles_title(articles)
+        bot.send_message(message.chat.id, titles,
+                         parse_mode="Markdown")
+        bot.register_next_step_handler(message, get_habr)
+    if text == 'новости':
+        add_new_articles(NAME_DB, NEWS_TABLE, NEWS_URL)
+        articles = get_articles(NAME_DB, NEWS_TABLE, 8)
+        titles = get_articles_title(articles)
+        bot.send_message(message.chat.id, titles,
+                         parse_mode="Markdown")
+        bot.register_next_step_handler(message, get_habr)
+    if text == "назад":
+        back_to_main(message)
 
 
 @bot.message_handler(content_types=['text'])
 def main_menu(message):
     text = message.text.lower()
     if text == "что нового?":
-        articles = get_articles('habr.db', 'habr_db')
-        titles = [f"{i}. [{article[2]}]({article[1]})" for i, article
-                  in enumerate(articles, 1)][5:]
-        titles = '\n\n'.join(titles)
-        bot.send_message(message.chat.id, titles,
-                         parse_mode="Markdown")
+        bot.send_message(message.chat.id,
+                         "Статьи или новости?", reply_markup=keyboard_habr)
+        bot.register_next_step_handler(message, get_habr)
     if text == "очередь":
         if is_admin(message):
             bot.send_message(message.chat.id,
@@ -170,7 +202,7 @@ def get_full_name(message: Message) -> None:
     name = []
     name += message.text.split()
     if message.text.lower() == "назад":
-        bot.send_message(message.chat.id, '/start', reply_markup=keyboard)
+        bot.send_message(message.chat.id, '/start', reply_markup=keyboard_main)
         bot.register_next_step_handler(message, main_menu)
     elif len(name) == 1:
         bot.send_message(message.chat.id,
@@ -189,7 +221,7 @@ def get_answer(message, *arg) -> None:
     text = message.text.lower()
     if text == 'да':
         queue.add_user(*arg, message.from_user.id)
-        bot.send_message(message.chat.id, 'Запомню)', reply_markup=keyboard)
+        bot.send_message(message.chat.id, 'Запомню)', reply_markup=keyboard_main)
         bot.register_next_step_handler(message, main_menu)
     if text == "нет":
         bot.send_message(message.chat.id, 'Введи еще раз имя и фамилию')
@@ -216,7 +248,7 @@ def get_password(message) -> None:
         bot.register_next_step_handler(message, main)
     else:
         bot.send_message(message.chat.id, "Пароль введен неверно",
-                         reply_markup=keyboard)
+                         reply_markup=keyboard_main)
         bot.register_next_step_handler(message, main_menu)
 
 
