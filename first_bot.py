@@ -4,6 +4,7 @@ from telebot.types import Message
 
 from database import Queue
 from keyboard import *
+from scraping_habr import get_articles
 
 bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
 queue = Queue()
@@ -139,8 +140,13 @@ def start_message(message):
 @bot.message_handler(content_types=['text'])
 def main_menu(message):
     text = message.text.lower()
-    # if text == "что нового?":
-    # bot.send_message(message.chat.id, "[Новости мира видеоигр]({})".format(news()), parse_mode="Markdown")
+    if text == "что нового?":
+        articles = get_articles('habr.db', 'habr_db')
+        titles = [f"{i}. [{article[2]}]({article[1]})" for i, article
+                  in enumerate(articles, 1)][5:]
+        titles = '\n\n'.join(titles)
+        bot.send_message(message.chat.id, titles,
+                         parse_mode="Markdown")
     if text == "очередь":
         if is_admin(message):
             bot.send_message(message.chat.id,
@@ -174,10 +180,6 @@ def get_full_name(message: Message) -> None:
         bot.send_message(message.chat.id, f"Тебя зовут {name[0]} {name[1]}?",
                          reply_markup=keyboard1)
         bot.register_next_step_handler(message, get_answer, name[0], name[1])
-
-
-# for i in range(3):
-#     queue.add_user(f'last_name{i}', f'first_name{i}', i)
 
 
 def get_answer(message, *arg) -> None:
