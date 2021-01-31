@@ -39,10 +39,13 @@ def delete_first(queue: Queue, message: Message) -> None:
     """
     if queue.queue_length():
         deleted_user = queue.delete_first_user()
-        bot.send_message(message.chat.id, f"{deleted_user} был удален",
+        first_name, last_name = deleted_user[1], deleted_user[2]
+        bot.send_message(message.chat.id,
+                         f"\"{first_name} {last_name}\" был удален",
                          reply_markup=keyboard_admin)
-        bot.send_message(queue.show_first_user()[3],
-                         'Сейчас твоя очередь!')
+        if queue.queue_length() > 0:
+            bot.send_message(queue.show_first_user()[3],
+                             'Сейчас твоя очередь!')
         if queue.queue_length() > 1:
             bot.send_message(queue.show_all_user()[1][3],
                              "Приготовься, ты следуюющий)")
