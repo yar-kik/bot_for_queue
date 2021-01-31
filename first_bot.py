@@ -156,22 +156,18 @@ def get_articles_title(articles: List[tuple]) -> str:
 def get_habr(message: Message) -> None:
     """"""
     text = message.text.lower()
+    if text == "назад":
+        back_to_main(message)
     if text == "статьи":
         add_new_articles(NAME_DB, ARTICLE_TABLE, ARTICLE_URL)
         articles = get_articles(NAME_DB, ARTICLE_TABLE, 8)
-        titles = get_articles_title(articles)
-        bot.send_message(message.chat.id, titles,
-                         parse_mode="Markdown")
-        bot.register_next_step_handler(message, get_habr)
     if text == 'новости':
         add_new_articles(NAME_DB, NEWS_TABLE, NEWS_URL)
         articles = get_articles(NAME_DB, NEWS_TABLE, 8)
-        titles = get_articles_title(articles)
-        bot.send_message(message.chat.id, titles,
-                         parse_mode="Markdown")
-        bot.register_next_step_handler(message, get_habr)
-    if text == "назад":
-        back_to_main(message)
+    titles = get_articles_title(articles)
+    bot.send_message(message.chat.id, titles,
+                     parse_mode="Markdown")
+    bot.register_next_step_handler(message, get_habr)
 
 
 @bot.message_handler(content_types=['text'])

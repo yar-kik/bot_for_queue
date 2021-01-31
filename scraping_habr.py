@@ -59,7 +59,7 @@ def get_articles(db_name: str, table_name: str, count: int = None) -> List[
         cursor.execute(f'SELECT * FROM {table_name} ')
     else:
         cursor.execute(f'SELECT * FROM {table_name} '
-                       f'ORDER BY article_id ASC LIMIT {count}')
+                       f'ORDER BY article_id DESC LIMIT {count}')
     return cursor.fetchall()
 
 
@@ -76,7 +76,7 @@ def parse_article_from_site(url: str) -> list:
         title = title_with_link.text
         article_url = title_with_link['href']
         if article_url not in [article[1] for article in
-                               get_articles('habr.db', 'habr_db')]:
+                               get_articles('habr.db', 'habr_db', 15)]:
             article = (article_url, title)
             new_articles.append(article)
     return new_articles
