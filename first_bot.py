@@ -37,10 +37,9 @@ def delete_first(queue: Queue, message: Message) -> None:
     """
     Delete a first person in the queue
     """
-    user = message.from_user.first_name
     if queue.queue_length():
-        queue.delete_first_user()
-        bot.send_message(message.chat.id, f"{user} был удален",
+        deleted_user = queue.delete_first_user()
+        bot.send_message(message.chat.id, f"{deleted_user} был удален",
                          reply_markup=keyboard_admin)
         bot.send_message(queue.show_first_user()[3],
                          'Сейчас твоя очередь!')

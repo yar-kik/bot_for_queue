@@ -70,14 +70,16 @@ class Queue:
                             (first_name, last_name, telegram_id))
         self._connection.commit()
 
-    def delete_first_user(self) -> None:
+    def delete_first_user(self) -> Tuple:
         """
         Delete first row of queue database table
         """
+        deleted_user = self.show_first_user()
         self.cursor.execute(f"DELETE FROM {self.queue_db} WHERE user_id IN "
                             f"(SELECT user_id FROM {self.queue_db} "
                             f"ORDER BY user_id ASC LIMIT 1)")
         self._connection.commit()
+        return deleted_user
 
     def clear_queue(self) -> None:
         """

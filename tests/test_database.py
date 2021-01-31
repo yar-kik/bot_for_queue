@@ -36,10 +36,11 @@ class TestQueue(unittest.TestCase):
     def test_delete_first_user(self):
         self.queue.cursor.executemany('INSERT INTO queue VALUES (?, ?, ? ,?);',
                                       self.test_data)
-        self.queue.delete_first_user()
+        deleted_user = self.queue.delete_first_user()
         self.queue.cursor.execute("SELECT * FROM queue;")
         user = self.queue.cursor.fetchone()
         self.assertEqual(user, (2, 'bar', 'foo', 124))
+        self.assertEqual(deleted_user, (1, 'foo', 'bar', 123))
 
     def test_clear_queue(self):
         self.queue.cursor.executemany('INSERT INTO queue VALUES (?, ?, ? ,?);',
