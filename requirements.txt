@@ -13,6 +13,6 @@ requests==2.23.0
 schedule==1.0.0
 six==1.14.0
 soupsieve==2.1
-urllib3==1.25.8
+urllib3==1.26.5
 virtualenv==20.0.10
 yarg==0.1.9
